@@ -35,31 +35,32 @@ def arithmetic_crossover(chromosome, top_five_chromosomes):
 
 
 # Тест-функции
-
 def f1(x):
-    d = CHROMOSOME_LENGTH
     s = sum([np.sin(5 * np.pi * xi) ** 6 for xi in x])
-    return -1 / d * s
+    return -1 / CHROMOSOME_LENGTH * s
+
 
 def f3(x):
     return (x[0] + 2 * x[1] - 7) ** 2 + (2 * x[0] + x[1] - 5) ** 2
+
 
 if __name__ == "__main__":
     # 1. Начало работы алгоритма
     print("Genetic Algorithm")
 
     # 2. Задаем n - число популяций и число итераций NumIter
-    CHROMOSOME_LENGTH = 2
-    POPULATION_NUMBER = 5
-    ITERATION_NUMBER = 10
-    GAMMA = 0.4
-    A = -10
-    B = 10
-    TEST_FUNCTION = f3
+    CHROMOSOME_LENGTH = 10
+    POPULATION_NUMBER = 400
+    ITERATION_NUMBER = 100
+    GAMMA = 0.1
+    A = -1
+    B = 1
+    TEST_FUNCTION = f1
 
     # 3. Генерируем популяцию случайным образом
     population = generate_initial_population(POPULATION_NUMBER)
     new_generation = []
+    best = population[0]
 
     # 6. Сравниваем каждый элемент со средним значением
     iter = 1
@@ -67,6 +68,9 @@ if __name__ == "__main__":
 
         # 4. Вычисляем значение пригодности каждой хромосомы
         fitness = [TEST_FUNCTION(chromosome) for chromosome in population]
+        cbest = population[fitness.index(min(fitness))]
+        if TEST_FUNCTION(cbest) < TEST_FUNCTION(best):
+            best = cbest[::]
 
         # 5. Вычисляем среднее значение пригодности
         mean = sum(fitness) / POPULATION_NUMBER
@@ -80,7 +84,6 @@ if __name__ == "__main__":
 
             # 8. Первый шанс на улучшение (скрещивание с одной из лучших хромосом)
             else:
-
                 top_five_chromosomes = sorted(population, key=lambda x: TEST_FUNCTION(x))[:5]
                 offspring = arithmetic_crossover(population[i], top_five_chromosomes)
                 if TEST_FUNCTION(offspring) <= mean:
@@ -94,11 +97,9 @@ if __name__ == "__main__":
                     else:
                         new_generation.append([random.uniform(A, B) for j in range(CHROMOSOME_LENGTH)])
 
-        population = new_generation
+        population = new_generation[::]
         new_generation = []
-        print(mean)
         iter += 1
 
     # 10. Получаем лучшую хромосому поколения
-    print(TEST_FUNCTION(sorted(population)[0]))
-
+    print(TEST_FUNCTION(best))
