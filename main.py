@@ -7,12 +7,15 @@ from numba import njit
 def generate_initial_population(POPULATION_NUMBER):
     population = []
     for i in range(POPULATION_NUMBER):
-        chromosome = [random.uniform(A, B) for j in range(CHROMOSOME_LENGTH)]
+        chromosome = []
+        for j in range(CHROMOSOME_LENGTH):
+            chromosome.append(random.uniform(A, B))
         population.append(chromosome)
-    return population
+    return np.array(population)
 
 
 # Алгоритм мутации гена
+@njit
 def uniform_mutation(chromosome):
     mutated_gene = random.randint(0, len(chromosome) - 1)
     chromosome[mutated_gene] = random.uniform(A, B)
@@ -20,8 +23,10 @@ def uniform_mutation(chromosome):
 
 
 # Алгоритм кроссинговера
+@njit
 def arithmetic_crossover(chromosome, top_five_chromosomes):
-    rschromosome = random.choice(top_five_chromosomes)
+    randind = random.randint(0, len(top_five_chromosomes) - 1)
+    rschromosome = top_five_chromosomes[randind]
     alpha = [random.uniform(-GAMMA, GAMMA + 1) for j in range(CHROMOSOME_LENGTH)]
     offspring = []
     for i in range(CHROMOSOME_LENGTH):
@@ -31,17 +36,20 @@ def arithmetic_crossover(chromosome, top_five_chromosomes):
         if new_gene > B:
             new_gene = B
         offspring.append(new_gene)
-    return offspring
+    return np.array(offspring)
 
 
 # Тест-функции
+@njit
 def f1(x):
     s = sum([np.sin(5 * np.pi * xi) ** 6 for xi in x])
     return -1 / CHROMOSOME_LENGTH * s
 
 
+@njit
 def f3(x):
     return (x[0] + 2 * x[1] - 7) ** 2 + (2 * x[0] + x[1] - 5) ** 2
+
 
 
 if __name__ == "__main__":
@@ -52,7 +60,7 @@ if __name__ == "__main__":
     CHROMOSOME_LENGTH = 10
     POPULATION_NUMBER = 400
     ITERATION_NUMBER = 100
-    GAMMA = 0.1
+    GAMMA = 0.4
     A = -1
     B = 1
     TEST_FUNCTION = f1
@@ -67,8 +75,9 @@ if __name__ == "__main__":
     while (iter <= ITERATION_NUMBER):
 
         # 4. Вычисляем значение пригодности каждой хромосомы
-        fitness = [TEST_FUNCTION(chromosome) for chromosome in population]
-        cbest = population[fitness.index(min(fitness))]
+        fitness = np.array([TEST_FUNCTION(chromosome) for chromosome in population])
+        best_index = np.where(fitness == min(fitness))[0][0]
+        cbest = population[best_index]
         if TEST_FUNCTION(cbest) < TEST_FUNCTION(best):
             best = cbest[::]
 
@@ -84,7 +93,9 @@ if __name__ == "__main__":
 
             # 8. Первый шанс на улучшение (скрещивание с одной из лучших хромосом)
             else:
-                top_five_chromosomes = sorted(population, key=lambda x: TEST_FUNCTION(x))[:5]
+                sorted_indices = np.argsort(np.array(fitness))
+                top_five_indices = sorted_indices[:5]
+                top_five_chromosomes = population[top_five_indices]
                 offspring = arithmetic_crossover(population[i], top_five_chromosomes)
                 if TEST_FUNCTION(offspring) <= mean:
                     new_generation.append(offspring)
@@ -97,7 +108,7 @@ if __name__ == "__main__":
                     else:
                         new_generation.append([random.uniform(A, B) for j in range(CHROMOSOME_LENGTH)])
 
-        population = new_generation[::]
+        population = np.array(new_generation[::])
         new_generation = []
         iter += 1
 
