@@ -2,6 +2,9 @@ import numpy as np
 import random
 from numba import njit
 import matplotlib.pyplot as plt
+import os
+import ctypes
+import time
 
 
 # Функция генерации начальной популяции хромосом (параметры (отрезок) от а до б)
@@ -140,7 +143,7 @@ def f6(x):
 @njit
 def f7(x):
     s = 0
-    for j in range(len(x) - 1):
+    for i in range(len(x) - 1):
         s += 100 * (x[i + 1] - x[i] ** 2) ** 2 + (x[i] - 1) ** 2
     return s
 
@@ -195,5 +198,109 @@ def f15(x):
 
 # CHROMOSOME_LENGTH, POPULATION_NUMBER, ITERATION_NUMBER, GAMMA, A, B, TEST_FUNCTION
 
-for i in range(3):
-    test_results(2, 600, 50, 0.4, -5, 5, f15)
+def c(file, name, types, result):
+    path = os.path.abspath(file)
+    module = ctypes.cdll.LoadLibrary(path)
+    func = module[name]
+    func.argtypes = types
+    func.restype = result
+    return func
+
+
+function_type = ctypes.CFUNCTYPE(ctypes.c_float, ctypes.POINTER(ctypes.c_float))
+
+c_genetic_algorithm = c("C:/Users/PC/CLionProjects/gabonst/libcode.dll", "genetic_algorithm",
+                        (ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_float, ctypes.c_float, ctypes.c_float),
+                        function_type)
+
+
+def c10(x):
+    a = sum([xi ** 2 for xi in x])
+    b = sum([np.cos(2 * np.pi * xi) for xi in x])
+    return -20 * np.exp(-0.2 * np.sqrt(a / len(x))) - np.exp(b / len(x)) + 20 + np.e
+
+
+def c11(x):
+    a = sum([xi ** 2 for xi in x])
+    b = 1
+    for j in range(len(x)):
+        b *= np.cos(x[j] / np.sqrt(j + 1))
+    return 1 / 4000 * a - b + 1
+
+
+def c12(x):
+    return (1 + (x[0] + x[1] + 1) ** 2 * (
+            19 - 14 * x[0] + 3 * x[0] ** 2 - 14 * x[1] + 6 * x[0] * x[1] + 3 * x[1] ** 2)) * (
+            30 + (2 * x[0] - 3 * x[1]) ** 2 * (
+            18 - 32 * x[0] + 12 * x[0] ** 2 + 48 * x[1] - 36 * x[0] * x[1] + 27 * x[1] ** 2))
+
+
+def c14(x):
+    return 4 * x[0] ** 2 - 2.1 * x[0] ** 4 + 1 / 3 * x[0] ** 6 + x[0] * x[1] - 4 * x[1] ** 2 + 4 * x[1] ** 4
+
+
+def c15(x):
+    return (x[1] - 5.1 / (4 * np.pi ** 2) * x[0] ** 2 + 5 / np.pi * x[0] - 6) ** 2 + 10 * (
+            1 - 1 / (8 * np.pi)) * np.cos(x[0]) + 10
+
+
+c_times = []
+times = []
+
+start_time = time.time()
+c_genetic_algorithm(2, 50, 100, 0.4, -2, 2, function_type(c12))
+end_time = time.time()
+
+c_times.append(end_time - start_time)
+
+start_time = time.time()
+c_genetic_algorithm(2, 50, 100, 0.4, -5, 5, function_type(c14))
+end_time = time.time()
+
+c_times.append(end_time - start_time)
+
+start_time = time.time()
+c_genetic_algorithm(2, 50, 100, 0.4, -5, 5, function_type(c15))
+end_time = time.time()
+
+c_times.append(end_time - start_time)
+
+start_time = time.time()
+genetic_algorithm(2, 50, 100, 0.4, -2, 2, f12)
+end_time = time.time()
+
+times.append(end_time - start_time)
+
+start_time = time.time()
+genetic_algorithm(2, 50, 100, 0.4, -5, 5, f14)
+end_time = time.time()
+
+times.append(end_time - start_time)
+
+start_time = time.time()
+genetic_algorithm(2, 50, 100, 0.4, -5, 5, f15)
+end_time = time.time()
+
+times.append(end_time - start_time)
+
+x1 = np.arange(3) - 0.2
+x2 = np.arange(3) + 0.2
+y1 = c_times
+y2 = times
+
+fig, ax = plt.subplots()
+
+ax.bar(x1, y1, width=0.4)
+ax.bar(x2, y2, width=0.4)
+
+ax.set_facecolor('seashell')
+fig.set_figwidth(12)
+fig.set_figheight(6)
+fig.set_facecolor('floralwhite')
+
+ax.legend(['С', 'Python + Numba'])
+
+plt.show()
+
+
+
