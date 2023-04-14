@@ -1,6 +1,4 @@
-import numpy as np
-import random
-from numba import njit
+from test_functions import *
 import matplotlib.pyplot as plt
 import os
 import ctypes
@@ -113,89 +111,6 @@ def test_results(chromosome_length, population_number, iteration_number, gamma, 
     print("f(x): ", test_function(best))
 
 
-# Тест-функции
-@njit
-def f1(x):
-    s = sum([np.sin(5 * np.pi * xi) ** 6 for xi in x])
-    return -1 / len(x) * s
-
-
-@njit
-def f3(x):
-    return (x[0] + 2 * x[1] - 7) ** 2 + (2 * x[0] + x[1] - 5) ** 2
-
-
-@njit
-def f4(x):
-    return 1 / 2 * sum([xi ** 4 - 16 * xi ** 2 + 5 * xi for xi in x])
-
-
-@njit
-def f5(x):
-    return np.prod(np.array([np.sqrt(xi) * np.sin(xi) for xi in x]))
-
-
-@njit
-def f6(x):
-    return sum([xi ** 2 for xi in x])
-
-
-@njit
-def f7(x):
-    s = 0
-    for i in range(len(x) - 1):
-        s += 100 * (x[i + 1] - x[i] ** 2) ** 2 + (x[i] - 1) ** 2
-    return s
-
-
-@njit
-def f8(x):
-    s = 0
-    for j in range(len(x)):
-        s += j * x[j] ** 4 + random.uniform(0, 1)
-    return s
-
-
-@njit
-def f9(x):
-    return sum([xi ** 2 - 10 * np.cos(2 * np.pi * xi) + 10 for xi in x])
-
-
-@njit
-def f10(x):
-    a = sum([xi ** 2 for xi in x])
-    b = sum([np.cos(2 * np.pi * xi) for xi in x])
-    return -20 * np.exp(-0.2 * np.sqrt(a / len(x))) - np.exp(b / len(x)) + 20 + np.e
-
-
-@njit
-def f11(x):
-    a = sum([xi ** 2 for xi in x])
-    b = 1
-    for j in range(len(x)):
-        b *= np.cos(x[j] / np.sqrt(j + 1))
-    return 1 / 4000 * a - b + 1
-
-
-@njit
-def f12(x):
-    return (1 + (x[0] + x[1] + 1) ** 2 * (
-            19 - 14 * x[0] + 3 * x[0] ** 2 - 14 * x[1] + 6 * x[0] * x[1] + 3 * x[1] ** 2)) * (
-            30 + (2 * x[0] - 3 * x[1]) ** 2 * (
-            18 - 32 * x[0] + 12 * x[0] ** 2 + 48 * x[1] - 36 * x[0] * x[1] + 27 * x[1] ** 2))
-
-
-@njit
-def f14(x):
-    return 4 * x[0] ** 2 - 2.1 * x[0] ** 4 + 1 / 3 * x[0] ** 6 + x[0] * x[1] - 4 * x[1] ** 2 + 4 * x[1] ** 4
-
-
-@njit
-def f15(x):
-    return (x[1] - 5.1 / (4 * np.pi ** 2) * x[0] ** 2 + 5 / np.pi * x[0] - 6) ** 2 + 10 * (
-            1 - 1 / (8 * np.pi)) * np.cos(x[0]) + 10
-
-
 # CHROMOSOME_LENGTH, POPULATION_NUMBER, ITERATION_NUMBER, GAMMA, A, B, TEST_FUNCTION
 
 def c(file, name, types, result):
@@ -214,79 +129,100 @@ c_genetic_algorithm = c("C:/Users/PC/CLionProjects/gabonst/libcode.dll", "geneti
                         function_type)
 
 
-def c10(x):
-    a = sum([xi ** 2 for xi in x])
-    b = sum([np.cos(2 * np.pi * xi) for xi in x])
-    return -20 * np.exp(-0.2 * np.sqrt(a / len(x))) - np.exp(b / len(x)) + 20 + np.e
+def time_test(lang):
+    times = []
+    length, a, b = 0, 0, 0
+    functions = [f1, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f14, f15]
+    for function in functions:
+        if function == f1:
+            length = 10
+            a = -1
+            b = 1
+        elif function == f3:
+            length = 2
+            a = -10
+            b = 10
+        elif function == f4:
+            length = 10
+            a = -5
+            b = 5
+        elif function == f5:
+            length = 2
+            a = 0
+            b = 10
+        elif function == f6:
+            length = 256
+            a = -5.12
+            b = 5.12
+        elif function == f7:
+            length = 30
+            a = -30
+            b = 30
+        elif function == f8:
+            length = 30
+            a = -1.28
+            b = 1.28
+        elif function == f9:
+            length = 30
+            a = -5.12
+            b = 5.12
+        elif function == f10:
+            length = 128
+            a = -32.768
+            b = 32.768
+        elif function == f11:
+            length = 30
+            a = -600
+            b = 600
+        elif function == f12:
+            length = 2
+            a = -2
+            b = 2
+        elif function == f14 or function == f15:
+            length = 2
+            a = -5
+            b = 5
+        start_time = time.time()
+        if lang == "c":
+            if function == f1:
+                function = c1
+            elif function == f3:
+                function = c3
+            elif function == f4:
+                function = c4
+            elif function == f5:
+                function = c5
+            elif function == f6:
+                function = c6
+            elif function == f7:
+                function = c7
+            elif function == f8:
+                function = c8
+            elif function == f9:
+                function = c9
+            elif function == f10:
+                function = c10
+            elif function == f11:
+                function = c11
+            elif function == f12:
+                function = c12
+            elif function == f14:
+                function = c14
+            elif function == f15:
+                function = c15
+            c_genetic_algorithm(length, 50, 50, 0.4, a, b, function_type(function))
+        else:
+            genetic_algorithm(length, 50, 50, 0.4, a, b, function)
+        end_time = time.time()
+        times.append(end_time - start_time)
+        print(f"{function}")
+    return times
 
 
-def c11(x):
-    a = sum([xi ** 2 for xi in x])
-    b = 1
-    for j in range(len(x)):
-        b *= np.cos(x[j] / np.sqrt(j + 1))
-    return 1 / 4000 * a - b + 1
-
-
-def c12(x):
-    return (1 + (x[0] + x[1] + 1) ** 2 * (
-            19 - 14 * x[0] + 3 * x[0] ** 2 - 14 * x[1] + 6 * x[0] * x[1] + 3 * x[1] ** 2)) * (
-            30 + (2 * x[0] - 3 * x[1]) ** 2 * (
-            18 - 32 * x[0] + 12 * x[0] ** 2 + 48 * x[1] - 36 * x[0] * x[1] + 27 * x[1] ** 2))
-
-
-def c14(x):
-    return 4 * x[0] ** 2 - 2.1 * x[0] ** 4 + 1 / 3 * x[0] ** 6 + x[0] * x[1] - 4 * x[1] ** 2 + 4 * x[1] ** 4
-
-
-def c15(x):
-    return (x[1] - 5.1 / (4 * np.pi ** 2) * x[0] ** 2 + 5 / np.pi * x[0] - 6) ** 2 + 10 * (
-            1 - 1 / (8 * np.pi)) * np.cos(x[0]) + 10
-
-
-c_times = []
-times = []
-
-start_time = time.time()
-c_genetic_algorithm(2, 50, 100, 0.4, -2, 2, function_type(c12))
-end_time = time.time()
-
-c_times.append(end_time - start_time)
-
-start_time = time.time()
-c_genetic_algorithm(2, 50, 100, 0.4, -5, 5, function_type(c14))
-end_time = time.time()
-
-c_times.append(end_time - start_time)
-
-start_time = time.time()
-c_genetic_algorithm(2, 50, 100, 0.4, -5, 5, function_type(c15))
-end_time = time.time()
-
-c_times.append(end_time - start_time)
-
-start_time = time.time()
-genetic_algorithm(2, 50, 100, 0.4, -2, 2, f12)
-end_time = time.time()
-
-times.append(end_time - start_time)
-
-start_time = time.time()
-genetic_algorithm(2, 50, 100, 0.4, -5, 5, f14)
-end_time = time.time()
-
-times.append(end_time - start_time)
-
-start_time = time.time()
-genetic_algorithm(2, 50, 100, 0.4, -5, 5, f15)
-end_time = time.time()
-
-times.append(end_time - start_time)
-
-x1 = np.arange(3) - 0.2
-x2 = np.arange(3) + 0.2
-y1 = c_times
-y2 = times
+x1 = np.arange(13) - 0.2
+x2 = np.arange(13) + 0.2
+y1 = time_test("c")
+y2 = time_test("python")
 
 fig, ax = plt.subplots()
 
@@ -301,6 +237,3 @@ fig.set_facecolor('floralwhite')
 ax.legend(['С', 'Python + Numba'])
 
 plt.show()
-
-
-
