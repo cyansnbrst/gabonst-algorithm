@@ -4,66 +4,63 @@
 #include <math.h>
 #include <string.h>
 
-#define POPULATION_NUMBER 50
-#define CHROMOSOME_LENGTH 2
-#define ITERATION_NUMBER 400
-#define A -5.0
-#define B 5.0
-#define GAMMA 0.4
+#define MAX_CHROMOSOME_LENGTH 20
 
-double rand_double(double a, double b) {
-    return a + ((double) rand() / RAND_MAX) * (b - a);
+float rand_double(float a, float b) {
+    return a + ((float) rand() / RAND_MAX) * (b - a);
 }
 
-double *generate_chromosome() {
-    double *chromosome = (double *) malloc(sizeof(double) * CHROMOSOME_LENGTH);
-    for (int i = 0; i < CHROMOSOME_LENGTH; i++) {
-        chromosome[i] = rand_double(A, B);
+float *generate_chromosome(int chromosome_length, float a, float b) {
+    float *chromosome = (float *) malloc(sizeof(float) * chromosome_length);
+    for (int i = 0; i < chromosome_length; i++) {
+        chromosome[i] = rand_double(a, b);
     }
     return chromosome;
 }
 
-double **generate_initial_population() {
-    double **population = (double **) malloc(sizeof(double *) * POPULATION_NUMBER);
-    for (int i = 0; i < POPULATION_NUMBER; i++) {
-        population[i] = generate_chromosome();
+float **generate_initial_population(int population_number, int chromosome_length, float a, float b) {
+    float **population = (float **) malloc(sizeof(float *) * population_number);
+    for (int i = 0; i < population_number; i++) {
+        population[i] = generate_chromosome(chromosome_length, a, b);
     }
     return population;
 }
 
-double *uniform_mutation(double *chromosome) {
-    int mutated_gene = rand() % CHROMOSOME_LENGTH;
-    chromosome[mutated_gene] = rand_double(A, B);
+float *uniform_mutation(float *chromosome, int chromosome_length, float a, float b) {
+    int mutated_gene = rand() % chromosome_length;
+    chromosome[mutated_gene] = rand_double(a, b);
     return chromosome;
 }
 
-double *arithmetic_crossover(double *chromosome, double top_five_chromosomes[5][CHROMOSOME_LENGTH]) {
+float *
+arithmetic_crossover(float *chromosome, float top_five_chromosomes[5][MAX_CHROMOSOME_LENGTH], int chromosome_length,
+                     float gamma, float a, float b) {
     int randind = rand() % 5;
-    double *rchromosome = top_five_chromosomes[randind];
-    double alpha[CHROMOSOME_LENGTH];
-    for (int i = 0; i < CHROMOSOME_LENGTH; ++i) {
-        alpha[i] = rand_double(-GAMMA, GAMMA + 1);
+    float *rchromosome = top_five_chromosomes[randind];
+    float alpha[chromosome_length];
+    for (int i = 0; i < chromosome_length; ++i) {
+        alpha[i] = rand_double(-gamma, gamma + 1);
     }
-    double *offspring = (double *) malloc(sizeof(double) * CHROMOSOME_LENGTH);
-    double new_gene;
-    for (int i = 0; i < CHROMOSOME_LENGTH; ++i) {
+    float *offspring = (float *) malloc(sizeof(float) * chromosome_length);
+    float new_gene;
+    for (int i = 0; i < chromosome_length; ++i) {
         new_gene = alpha[i] * chromosome[i] + (1 - alpha[i]) * rchromosome[i];
-        if (new_gene < A)
-            new_gene = A;
-        if (new_gene > B)
-            new_gene = B;
+        if (new_gene < a)
+            new_gene = a;
+        if (new_gene > b)
+            new_gene = b;
         offspring[i] = new_gene;
     }
     return offspring;
 }
 
 
-double f3(double *x) {
+float f3(float *x) {
     return pow((x[0] + 2 * x[1] - 7), 2) + pow((2 * x[0] + x[1] - 5), 2);
 }
 
-double f14(double *x) {
-    double term1, term2, term3, term4, term5;
+float f14(float *x) {
+    float term1, term2, term3, term4, term5;
     term1 = 4 * pow(x[0], 2);
     term2 = -2.1 * pow(x[0], 4);
     term3 = 1 / 3.0 * pow(x[0], 6);
@@ -72,57 +69,58 @@ double f14(double *x) {
     return term1 + term2 + term3 + term4 + term5;
 }
 
-int main() {
-    printf("Genetical algorithm\n");
+float
+genetic_algorithm(int chromosome_length, int population_number, int iteration_number, float gamma, float a, float b,
+                  float (*test_function)(float *)) {
     srand(time(NULL));
 
-    double **population = generate_initial_population();
-    double **new_generation = (double **) malloc(sizeof(double *) * POPULATION_NUMBER);
+    float **population = generate_initial_population(population_number, chromosome_length, a, b);
+    float **new_generation = (float **) malloc(sizeof(float *) * population_number);
 
-    double *best = population[0];
+    float *best = population[0];
 
     int iter = 1;
-    while (iter <= ITERATION_NUMBER) {
+    while (iter <= iteration_number) {
 
         int cc = 0;
 
-        double fitness[POPULATION_NUMBER];
-        for (int i = 0; i < POPULATION_NUMBER; ++i) {
-            fitness[i] = f14(population[i]);
+        float fitness[population_number];
+        for (int i = 0; i < population_number; ++i) {
+            fitness[i] = test_function(population[i]);
         }
 
-        double *cbest;
-        for (int i = 0; i < POPULATION_NUMBER; ++i) {
-            if (fitness[i] < f14(best)) {
+        float *cbest;
+        for (int i = 0; i < population_number; ++i) {
+            if (fitness[i] < test_function(best)) {
                 cbest = population[i];
             }
         }
 
-        if (f14(cbest) < f14(best)) {
-            memcpy(best, cbest, sizeof(double) * CHROMOSOME_LENGTH);
+        if (test_function(cbest) < test_function(best)) {
+            memcpy(best, cbest, sizeof(float) * chromosome_length);
         }
 
-        double mean = 0;
-        for (int i = 0; i < POPULATION_NUMBER; ++i) {
+        float mean = 0;
+        for (int i = 0; i < population_number; ++i) {
             mean += fitness[i];
         }
-        mean /= POPULATION_NUMBER;
+        mean /= population_number;
 
-        for (int i = 0; i < POPULATION_NUMBER; ++i) {
+        for (int i = 0; i < population_number; ++i) {
             if (fitness[i] < mean) {
-                double *mutated_chromosome = uniform_mutation(population[i]); // явное копирование
+                float *mutated_chromosome = uniform_mutation(population[i], chromosome_length, a, b); // явное копирование
                 new_generation[cc] = mutated_chromosome;
                 ++cc;
 
             } else {
-                double *temp;
-                double **sorted_array = (double **) malloc(sizeof(double *) * POPULATION_NUMBER);
-                memcpy(sorted_array, population, sizeof(double *) * POPULATION_NUMBER);
+                float *temp;
+                float **sorted_array = (float **) malloc(sizeof(float *) * population_number);
+                memcpy(sorted_array, population, sizeof(float *) * population_number);
                 _Bool no_swap;
-                for (int j = POPULATION_NUMBER - 1; j >= 0; --j) {
+                for (int j = population_number - 1; j >= 0; --j) {
                     no_swap = 1;
                     for (int k = 0; k < i; ++k) {
-                        if (f14(sorted_array[k]) > f14(sorted_array[k + 1])) {
+                        if (test_function(sorted_array[k]) > test_function(sorted_array[k + 1])) {
                             temp = sorted_array[k];
                             sorted_array[k] = sorted_array[k + 1];
                             sorted_array[k + 1] = temp;
@@ -133,34 +131,38 @@ int main() {
                         break;
                 }
 
-                double top_five_chromosomes[5][CHROMOSOME_LENGTH] = {0};
+                float top_five_chromosomes[5][MAX_CHROMOSOME_LENGTH] = {0};
                 for (int j = 0; j < 5; ++j) {
-                    memcpy(top_five_chromosomes[j], sorted_array[j], sizeof(double) * CHROMOSOME_LENGTH);
+                    memcpy(top_five_chromosomes[j], sorted_array[j], sizeof(float) * chromosome_length);
                 }
 
-                double *offspring = arithmetic_crossover(population[i], top_five_chromosomes);
-                if (f14(offspring) <= mean) {
+                float *offspring = arithmetic_crossover(population[i], top_five_chromosomes, chromosome_length, gamma, a, b);
+                if (test_function(offspring) <= mean) {
                     new_generation[cc] = offspring;
                     ++cc;
                 } else {
-                    double *mutated_chromosome = uniform_mutation(population[i]);
-                    if (f14(mutated_chromosome) <= mean) {
+                    float *mutated_chromosome = uniform_mutation(population[i], chromosome_length, a, b);
+                    if (test_function(mutated_chromosome) <= mean) {
                         new_generation[cc] = mutated_chromosome;
                         ++cc;
                     } else {
-                        new_generation[cc] = generate_chromosome();
+                        new_generation[cc] = generate_chromosome(chromosome_length, a, b);
                         ++cc;
                     }
                 }
 
             }
         }
-        memcpy(population, new_generation, sizeof(double *) * POPULATION_NUMBER);
-        memset(new_generation, 0, POPULATION_NUMBER);
+        memcpy(population, new_generation, sizeof(float *) * population_number);
+        memset(new_generation, 0, population_number);
         ++iter;
 
     }
-    printf("%f", f14(best));
+    printf("%f", test_function(best));
+}
+
+int main() {
+    genetic_algorithm(2, 50, 400, 0.4f, -5.f, 5.0f, f14);
     return 0;
 
 }
