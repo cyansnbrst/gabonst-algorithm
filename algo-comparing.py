@@ -1,6 +1,19 @@
 from main import *
 from geneticalgorithm2 import geneticalgorithm2 as ga
 from geneticalgorithm2 import AlgorithmParams
+from scipy.stats import wilcoxon
+
+
+# Здесь statistics - значение статистики критерия Вилкоксона,
+# p - p-value (вероятность получить такое же или более экстремальное
+# значение статистики при условии верности нулевой гипотезы),
+# а H0 rejected - булево значение, которое показывает, была ли
+# отвергнута нулевая гипотеза о равенстве распределений.
+# Если значение H0 rejected равно True, то можно сделать вывод
+# о значимой разнице между распределениями выборок.
+def run_wilcoxon_test(statistics, map_title, alpha=0.05):
+    stat, p = wilcoxon(statistics[0], statistics[1])
+    print(f'Comparison of {map_title} statistics=%.3f, p=%.4f, H0 rejected: %r' % (stat, p, p <= alpha))
 
 
 def algo_comparing(chromosome_length, population_number, iteration_number, gamma, a, b, test_function):
@@ -21,6 +34,7 @@ def algo_comparing(chromosome_length, population_number, iteration_number, gamma
     ax.legend()
     ax.grid()
     plt.show()
+    run_wilcoxon_test([results, model.report], "original and pypi ga2")
 
 
 algo_comparing(10, 500, 100, 0.4, -1, 1, f1)
